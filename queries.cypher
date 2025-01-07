@@ -41,4 +41,37 @@ RETURN r;
 
 // ------------- List all patients that share doctor -------------
 MATCH (p:Patient)-[:HAS_CASE]->(c:Case)-[:ASSIGNED_TO|REFERRED_TO]->(d:Doctor)<-[:ASSIGNED_TO](p1:Patient)
-RETURN p.name AS patient1name, 
+RETURN p.name AS patient1name;
+
+
+// -------------- Elemental queries ------------------
+
+// Find all patients older than 60 together with their cases and description
+MATCH (p:Patient)-[:HAS_CASE]->(c:Case)
+WHERE p.age > 60
+RETURN p.name, p.age, c.description;
+
+// Find the number of patients assigned to each doctor
+MATCH (d:Doctor)<-[:ASSIGNED_TO]-(c:Case)<-[:HAS_CASE]-(p:Patient)
+RETURN d.name, COUNT(p) as num_patients;
+
+// ------------- Intermediate queries ----------------
+
+// Obtain a list of doctors along with the diseases diagnosed
+// in 'Open' cases assigned to them, as well as the total number 
+// of open cases per doctor in the list.
+MATCH (d:Doctor)<-[:ASSIGNED_TO]-(c:Case)-[:HAS_APPOINTMENT]->(appointment)-[:DIAGNOSED]->(dis:Disease)
+WHERE c.status = 'Open'
+RETURN d.name AS Doctor, 
+       collect(DISTINCT dis.scientific_name) AS diseases_diagnosed,
+       count(DISTINCT c) AS open_cases;
+
+// ------------ Advanced queries ---------------------
+
+// Find all the doctors who have treated patients diagnosed with 
+// the same disease as patients referred by Dr. Paco.
+MATCH (drPaco:Doctor {name: 'Paco'})-[:REFERRED_TO]-(c:Case)-[:HAS_APPOINTMENT]->(a:Appointment)-[:DIAGNOSED]->(disease:Disease)
+MATCH (c2:Case)-[:HAS_APPOINTMENT]->(a2:Appointment)-[:DIAGNOSED]->(disease)
+MATCH (c2)-[:ASSIGNED_TO]->(otherDoctor:Doctor)
+WHERE NOT otherDoctor = drPaco
+RETURN DISTINCT otherDoctor, disease
