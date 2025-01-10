@@ -3,11 +3,11 @@
 // Find all patients older than 60 together with their cases and description
 MATCH (p:Patient)-[:HAS_CASE]->(c:Case)
 WHERE p.age > 60
-RETURN p.name, p.age, c.description;
+RETURN p.name AS name, p.age AS age, c.description AS description;
 
 // Find the number of patients assigned to each doctor
 MATCH (d:Doctor)<-[:ASSIGNED_TO]-(c:Case)<-[:HAS_CASE]-(p:Patient)
-RETURN d.name, COUNT(p) as num_patients;
+RETURN d.name AS doctor_name, COUNT(p) AS num_patients;
 
 // ------------- Intermediate queries ----------------
 
@@ -37,10 +37,10 @@ MATCH (drPaco:Doctor {name: 'Paco'})-[:REFERRED_TO]-(c:Case)-[:HAS_APPOINTMENT]-
 MATCH (c2:Case)-[:HAS_APPOINTMENT]->(a2:Appointment)-[:DIAGNOSED]->(disease)
 MATCH (c2)-[:ASSIGNED_TO]->(otherDoctor:Doctor)
 WHERE NOT otherDoctor = drPaco
-RETURN DISTINCT otherDoctor, disease
+RETURN DISTINCT otherDoctor.name AS doctor, disease.scientific_name AS disease
 
 // Finds the minimum path between a patient and a doctor where he was referred,
 // going through cases, apointments and diagnosis
 MATCH path = shortestPath((p:Person:Patient)-[:HAS_CASE|HAS_APPOINTMENT|DIAGNOSED|REFERRED_TO*]-(d:Person:Doctor))
 RETURN p.name AS Patient, d.name AS Doctor, length(path) AS Path_length, nodes(path) AS Nodes, relationships(path) AS Relationships
-ORDER BY Path_length ASC LIMIT 1;
+ORDER BY Path_length ASC LIMIT 5;
